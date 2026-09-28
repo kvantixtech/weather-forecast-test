@@ -1,0 +1,10 @@
+[Unit]
+Description=Kvantix vejr-test: prognoser 4 gange i døgnet
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:07:00 UTC
+RandomizedDelaySec=120
+Persistent=true
+
+[Install]
+WantedBy=timers.target

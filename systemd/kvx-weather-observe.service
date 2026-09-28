@@ -1,0 +1,24 @@
+[Unit]
+Description=Kvantix vejr-test: hent DMI-målinger, tjek kæden, opdatér resultatsiden
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kvxweather
+Group=kvxweather
+Environment=KVX_WEATHER_CONFIG=/etc/kvx-weather/config.json
+ExecStart=/usr/bin/python3 /opt/kvantix/weather/kvx_weather.py observe --days 3
+# Fejler verify, stopper tjenesten her (vises i 'systemctl --failed'), og siden opdateres ikke.
+ExecStart=/usr/bin/python3 /opt/kvantix/weather/kvx_weather.py verify
+ExecStart=/usr/bin/python3 /opt/kvantix/weather/kvx_weather.py page
+Nice=10
+TimeoutStartSec=20min
+MemoryMax=768M
+ProtectSystem=strict
+ReadWritePaths=/var/lib/kvx-weather
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

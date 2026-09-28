@@ -1,0 +1,21 @@
+[Unit]
+Description=Kvantix vejr-test: hent prognoser (DMI, MET Norway, OpenWeatherMap)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kvxweather
+Group=kvxweather
+Environment=KVX_WEATHER_CONFIG=/etc/kvx-weather/config.json
+ExecStart=/usr/bin/python3 /opt/kvantix/weather/kvx_weather.py collect
+Nice=10
+TimeoutStartSec=30min
+MemoryMax=512M
+ProtectSystem=strict
+ReadWritePaths=/var/lib/kvx-weather
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
