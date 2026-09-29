@@ -11,7 +11,7 @@ This collector saves what **DMI**, **MET Norway**, **OpenWeatherMap** (free 3-ho
 
 The scoring rules in this repository were fixed and published before the first forecast was collected. The commit history is the proof.
 
-Results: <https://playground.kvantix.tech/weather/> · Part of the Kvantix [Data Playground](https://kvantix.tech/playground/).
+Live status and, from late October, results: <https://kvantix.tech/playground/weather/> · Part of the Kvantix [Data Playground](https://kvantix.tech/playground/).
 
 ## What is measured
 
