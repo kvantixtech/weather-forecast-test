@@ -1,0 +1,68 @@
+name: watchdog
+
+# Once a day, after the server's anchor is due (04:17 UTC): did today's anchor arrive, is the
+# chain intact, is the server running a published version, and did new downloads get locked?
+# If not, an issue is opened (you get an email if you watch the repository). When everything is
+# fine again, the issue is closed automatically.
+on:
+  schedule:
+    - cron: "37 7 * * *"
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/watchdog.yml"]
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the latest anchor
+        id: check
+        run: |
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import csv, os
+          from datetime import datetime, timezone
+          rows = list(csv.DictReader(open("anchors/chain-heads.csv", encoding="utf-8")))
+          lock = {l.split()[1] for l in open("METHOD.lock", encoding="utf-8") if l.strip() and not l.startswith("#")}
+          today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+          last, prev = rows[-1], (rows[-2] if len(rows) > 1 else None)
+          problems = []
+          if last["date_utc"] != today:
+              problems.append(f"No anchor for {today}. The latest is from {last['date_utc']} (server down, timer stopped or push failed).")
+          if last["chain_ok"] != "true":
+              problems.append(f"The anchor of {last['date_utc']} says the chain is NOT intact.")
+          if last["code_sha256"] not in lock:
+              problems.append(f"The server runs code {last['code_sha256'][:16]}…, which is not a published version in METHOD.lock.")
+          if prev and int(last["runs"]) <= int(prev["runs"]):
+              problems.append(f"No new downloads were locked since {prev['date_utc']} ({prev['runs']} → {last['runs']}).")
+          print(f"Latest anchor: {last['date_utc']} · {last['runs']} downloads · chain {last['chain_ok']} · `{last['chain_head'][:16]}…`\n")
+          print("\n".join("- " + p for p in problems) if problems else "All good.")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"problems={len(problems)}\n")
+          with open("problems.md", "w") as fh:
+              fh.write("\n".join("- " + p for p in problems))
+          PY
+      - name: Open or close the watchdog issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          num=$(gh issue list --state open --search '"Anchor watchdog" in:title' --json number --jq '.[].number' | head -n 1)
+          if [ "${{ steps.check.outputs.problems }}" != "0" ]; then
+            body="$(cat problems.md)
+
+          Checked $(date -u +'%Y-%m-%d %H:%M UTC') by the watchdog workflow. On the server: \`systemctl status kvx-weather-anchor.timer\` and \`journalctl -u kvx-weather-anchor --since yesterday\`."
+            if [ -z "$num" ]; then gh issue create --title "Anchor watchdog: $(date -u +%F)" --body "$body"; else gh issue comment "$num" --body "$body"; fi
+            exit 1
+          elif [ -n "$num" ]; then
+            gh issue close "$num" --comment "Fixed: today's anchor arrived and everything checks out ($(date -u +%F))."
+          fi
+      - name: Keep the schedule alive
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/watchdog.yml/enable" || true
