@@ -1,0 +1,25 @@
+name: anchors
+
+on:
+  push:
+    paths: ["anchors/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Anchors are well-formed, in order, and name a published code hash
+        run: python3 tools/anchor.py lint
+      - name: Latest anchor
+        run: |
+          echo '| date | runs | chain head | chain ok |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---|---|---|' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 1 anchors/chain-heads.csv | awk -F, '{print "| "$1" | "$3" | `"$6"` | "$7" |"}' >> "$GITHUB_STEP_SUMMARY"

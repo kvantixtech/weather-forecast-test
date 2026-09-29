@@ -1,0 +1,26 @@
+[Unit]
+Description=Kvantix weather test: publish the chain head to GitHub (daily anchor)
+After=network-online.target kvx-weather-observe.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kvxweather
+Group=kvxweather
+RuntimeDirectory=kvx-weather-anchor
+Environment="GIT_SSH_COMMAND=ssh -i /root/.ssh/kvx_weather_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/root/.ssh/known_hosts"
+# 1) As the collector's own user: read the chain head (read-only). Running this as root
+#    would leave root-owned SQLite WAL files behind and lock the collector out.
+ExecStart=/usr/bin/python3 /opt/kvantix/weather/tools/anchor.py snapshot --db /var/lib/kvx-weather/weather.sqlite3 --code /opt/kvantix/weather/kvx_weather.py --out /run/kvx-weather-anchor/head.json
+# 2) As root ("!" keeps the sandbox below), because the deploy key is root's: one line, commit, push.
+#    The script runs from /opt, never from the clone, so nothing pulled from GitHub is executed.
+ExecStart=!/usr/bin/python3 /opt/kvantix/weather/tools/anchor.py publish --snapshot /run/kvx-weather-anchor/head.json --repo /var/lib/kvx-weather-anchor/weather-forecast-test --push
+Nice=10
+TimeoutStartSec=5min
+ProtectSystem=strict
+ReadWritePaths=/var/lib/kvx-weather /var/lib/kvx-weather-anchor
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

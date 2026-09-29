@@ -1,0 +1,34 @@
+name: tests
+
+on:
+  push:
+    paths-ignore: ["anchors/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    name: offline tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Collector and scoring (synthetic API responses, no network)
+        run: python3 tests/test_offline.py
+      - name: Daily anchor (snapshot, publish, check, tamper)
+        run: python3 tests/test_anchor.py
+      - name: Method lock and anchors file
+        run: python3 tools/anchor.py lint
+      - name: Published code hash
+        run: |
+          echo "sha256(kvx_weather.py) = $(sha256sum kvx_weather.py | cut -d' ' -f1)" >> "$GITHUB_STEP_SUMMARY"
+          grep -v '^#' METHOD.lock >> "$GITHUB_STEP_SUMMARY"

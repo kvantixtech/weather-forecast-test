@@ -1,5 +1,10 @@
 # Kvantix weather forecast test
 
+[![tests](https://github.com/kvantixtech/weather-forecast-test/actions/workflows/tests.yml/badge.svg)](https://github.com/kvantixtech/weather-forecast-test/actions/workflows/tests.yml)
+[![anchors](https://github.com/kvantixtech/weather-forecast-test/actions/workflows/anchors.yml/badge.svg)](anchors/)
+![method](https://img.shields.io/badge/method-v1.1%20locked-E7B24C)
+![licence](https://img.shields.io/badge/licence-MIT-blue)
+
 Which weather forecast is right most often in Denmark?
 
 This collector saves what **DMI**, **MET Norway**, **OpenWeatherMap** (free 3-hour forecast) and the pilots' airport forecast (**TAF**) predict for five Danish cities, four times a day. It locks every download in a SHA-256 hash chain **before** the weather happens. Afterwards it fetches what DMI's weather stations actually measured and scores every source against it, and against a lazy baseline: "tomorrow will be like today".
@@ -31,12 +36,17 @@ chain_hash = sha256(prev_hash + "|" + canonical_json(kind, source, location, fet
 
 `kvx_weather.py verify` recomputes the chain and every raw file's hash. A failed download is kept in the chain as a gap, not hidden.
 
+**Daily public anchor.** Every day the head of the chain is committed to [`anchors/chain-heads.csv`](anchors/). Changing any earlier download afterwards would no longer lead to a head that is already public. See [`anchors/README.md`](anchors/README.md) for how to check it.
+
+**Method lock.** [`METHOD.lock`](METHOD.lock) lists the SHA-256 of every published version of `kvx_weather.py`. CI fails if the file changes without a new version, and each anchor records which version the server was running. Changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Run it
 
 Python 3.9+, standard library only (SQLite).
 
 ```bash
 python3 tests/test_offline.py          # offline test, no network
+python3 tests/test_anchor.py           # daily anchor: snapshot, publish, check, tamper
 KVX_WEATHER_CONFIG=config.json python3 kvx_weather.py stations
 KVX_WEATHER_CONFIG=config.json python3 kvx_weather.py probe --loc aalborg
 KVX_WEATHER_CONFIG=config.json python3 kvx_weather.py collect

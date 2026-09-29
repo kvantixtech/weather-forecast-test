@@ -1,0 +1,5 @@
+# Published versions of the collector and scoring rules.
+# <VERSION>  <sha256 of kvx_weather.py>  <first published, UTC>  <commit>
+# CI fails if kvx_weather.py changes without a new line here, and the daily anchors
+# record which of these hashes the server was running.
+1.1  0464d697589594b6f427be4d01e5f5fd7f7f9a4867281f00b6d212dcab5f6360  2026-09-28T07:57:51Z  f4c2993
