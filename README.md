@@ -66,6 +66,12 @@ KVX_WEATHER_CONFIG=config.json python3 kvx_weather.py score
 
 No data is included in this repository. Kvantix is not affiliated with any of the sources.
 
+## Related
+
+- [lock-your-prediction](https://github.com/kvantixtech/lock-your-prediction): the same "lock it before the outcome" idea for anyone's prediction.
+- [validation-examples](https://github.com/kvantixtech/validation-examples): six datasets where the truth is known, and what each test catches.
+- [kvantix-reports](https://github.com/kvantixtech/kvantix-reports): the reports on our own trading engine. It failed.
+
 ## Licence
 
 Code: MIT, see `LICENSE`. © 2026 Kvantix (CVR 46296036), Hjørring, Denmark · validation@kvantix.tech
